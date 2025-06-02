@@ -57,8 +57,8 @@ def OP( X, Y, Z, R, ndir, m ) :
     # ax.set_aspect( 'equal' )
     return ( X * V[ m, 0 ] + Y * V[ m, 1 ] + Z * V[ m,2 ] ) / R  # cosine of the angle between the polygon vertex m and the vector r
 
-def steerablePyramid3D( I, nsc, ndir ) :
-    xd, yd, zd = I.shape
+def steerablePyramid3D( dims, nsc, ndir ) :
+    xd, yd, zd = dims
     X, Y, Z = np.meshgrid( np.linspace( -np.pi, np.pi, xd ), np.linspace( -np.pi, np.pi, yd ), np.linspace( -np.pi, np.pi, zd ) )    
     R = np.sqrt( X**2 + Y**2 + Z**2 )
 
@@ -89,7 +89,7 @@ if __name__ == "__main__" :
 
     sample = 'sawtooth3D_img.nii.gz'
     I = nib.load( sample ).get_fdata()
-    A2 = steerablePyramid3D( I, nsc, ndir )
+    A2 = steerablePyramid3D( I.shape, nsc, ndir )
 
     # check that filters add up to 1
     s = np.sum( A2, axis = 0 )  # add up all filters
