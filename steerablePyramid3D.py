@@ -146,8 +146,6 @@ def var( I, mean = None ) :
             return t.mean( t.real( I )**2, dim = sdims ) + \
               1j * t.mean( t.imag( I )**2, dim = sdims )
     else :
-        # for _ in range( ndims ) :  # and spatial dimensions back
-        #     mean = t.unsqueeze( mean, -1 ) 
         if t.all( t.isreal( I ) ) :
             # need to explicitely broadcast mean here in case of images with batch and channels dimensions
             return t.mean( ( I - mean )**2, dim = sdims )
@@ -166,8 +164,6 @@ def skew( I, var, mean = None ) :
             return t.mean( t.real( I )**3, dim = sdims ) / t.real( var )**(3/2) + \
               1j * t.mean( t.imag( I )**3, dim = sdims ) / t.imag( var )**(3/2)
     else :
-        # for _ in range( ndims ) :  # and spatial dimensions back
-        #     mean = t.unsqueeze( mean, -1 ) 
         if t.all( t.isreal( I ) ) :
             return t.mean( ( I - mean )**3, dim = sdims ) / var**(3/2)
         else :
@@ -185,8 +181,6 @@ def kurt( I, var, mean = None ) :
             return t.mean( t.real( I )**4, dim = sdims ) / t.real( var )**2 + \
              1j * t.mean( t.imag( I )**4, dim = sdims ) / t.imag( var )**2
     else :
-        # for _ in range( ndims ) :  # and spatial dimensions back
-        #     mean = t.unsqueeze( mean, -1 ) 
         if t.all( t.isreal( I ) ) :
             return t.mean( ( I - mean )**4, dim = sdims ) / var**2
         else :
@@ -403,9 +397,9 @@ if __name__ == "__main__" :
     # # uncomment to test 2D image expansion
     # I = I[ :, :, 32 ].clone()  # make 2D to test 2D expansion
 
-    # # uncomment to test 1D signal expansion
-    # I = I[ :, 32, 32 ].clone()  # make 1D to test 1D expansion
-    
+    # uncomment to test 1D signal expansion
+    I = I[ :, 32, 32 ].clone()  # make 1D to test 1D expansion
+
     if I.ndim == 1 :
         ndir = 1
 
