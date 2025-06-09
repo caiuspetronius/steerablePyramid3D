@@ -370,14 +370,15 @@ def vectorize( stats_all, min_level = None, weights = None ) :
         stats = t.cat( [ stats_vox, mag_means ], dim = -1 )
     else :
         stats = mag_means[ ..., 1 + min_level * ndirs : ]
-    vstats =  t.cat( [ stats, skew_recon[ ..., min_level : ], kurt_recon[ ..., min_level : ], \
-                        t.flatten( acorr_recon[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
-                        t.flatten( acorr_mag[ ..., :, min_level :, : ], start_dim = -3, end_dim = -1 ), \
-                        t.flatten( xcorr_mag[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
-                        t.flatten( xcorr_real[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
-                        t.flatten( xcorr_lmag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
-                        t.flatten( xcorr_lreal[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
-                        t.flatten( xcorr_limag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ) ], dim = -1 )
+    vstats = t.cat( [ stats_vox[ ..., : -1 ], skew_recon, kurt_recon, mag_means ], dim = -1 )
+    # vstats =  t.cat( [ stats, skew_recon[ ..., min_level : ], kurt_recon[ ..., min_level : ], \
+    #                     t.flatten( acorr_recon[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
+    #                     t.flatten( acorr_mag[ ..., :, min_level :, : ], start_dim = -3, end_dim = -1 ), \
+    #                     t.flatten( xcorr_mag[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
+    #                     t.flatten( xcorr_real[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
+    #                     t.flatten( xcorr_lmag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
+    #                     t.flatten( xcorr_lreal[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
+    #                     t.flatten( xcorr_limag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ) ], dim = -1 )
     if got_weights :
         return vstats, weights
     else :
@@ -396,8 +397,8 @@ if __name__ == "__main__" :
     # # uncomment to test 2D image expansion
     # I = I[ :, :, 32 ].clone()  # make 2D to test 2D expansion
 
-    # uncomment to test 1D signal expansion
-    I = I[ :, 32, 32 ].clone()  # make 1D to test 1D expansion
+    # # uncomment to test 1D signal expansion
+    # I = I[ :, 32, 32 ].clone()  # make 1D to test 1D expansion
 
     if I.ndim == 1 :
         ndir = 1
@@ -446,13 +447,13 @@ if __name__ == "__main__" :
             if I.ndim == 1 :
                 axs[ i, 0 ].plot( imgc[ ..., -1 ] )
             else :
-                axs[ i, 0 ].imshow( imgc[ ..., -1 ], vmin = 0, vmax = 1, cmap = 'gray' )
+                axs[ i, 0 ].imshow( imgc[ ..., -1 ], vmin = -1, vmax = 1, cmap = 'gray' )
             axs[ i, 0 ].set_title( 'Lowest-pass', fontsize=12 )
         elif i == 2 :
             if I.ndim == 1 :
                 axs[ i, 0 ].plot( imgc[ ..., 0 ] )
             else :
-                axs[ i, 0 ].imshow( imgc[ ..., 0 ], vmin = 0, vmax = .2, cmap = 'gray' )
+                axs[ i, 0 ].imshow( imgc[ ..., 0 ], vmin = -.2, vmax = .2, cmap = 'gray' )
             axs[ i, 0 ].set_title( 'Highest-pass', fontsize=12 )
         elif i == 3 :
             if I.ndim == 1 :
@@ -465,7 +466,7 @@ if __name__ == "__main__" :
             if I.ndim == 1 :
                 axs[ i, j ].plot( imgc[ ..., cnt ] )
             else :
-                axs[ i, j ].imshow( imgc[ ..., cnt ], vmin = 0, vmax = .05, cmap = 'gray' )
+                axs[ i, j ].imshow( imgc[ ..., cnt ], vmin = -.1, vmax = .1, cmap = 'gray' )
             axs[ i, j ].set_title( 'BP' + str( i + 1  ) +'Ori' + str( j ), fontsize=12 )
             cnt += 1
 
