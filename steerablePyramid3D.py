@@ -31,48 +31,47 @@ def HP( R, l ) :
     HP[ R <= a ] = 0
     return HP
 
-def OP2( X, Y, ndir, m ) :
-    # raised cosine in direction m defined by a regular grid of ndir 2D directioins
-    thm = t.pi * m / ndir
-    nd1 = ndir - 1
-    # nrm = t.sqrt( t.sum( ( t.cos( t.arange( ndir ) * t.pi / ndir ) )**( 2 * nd1 ) ) )  # normalization const
-    return ( ( t.cos( t.angle( X + 1j * Y ) - thm ) )**nd1 ) # / nrm
-
-def OP3( X, Y, Z, R, ndir, m ) :
-    # conical filter in direction m defined by a regular polyhedron with ndir 3D directioins
-    p = ( 1 + t.sqrt( t.tensor( 5 ) ) ) / 2  # golden ratio
-    if ndir == 3 :  # octahedron
-        V = t.tensor( [ [ 1, 0, 0 ], [ 0, 1, 0 ], [ 0, 0, 1 ] ] )
-        n = 1
-    elif ndir == 4 :  # cube
-        V = t.tensor( [ [ 1, 1, 1 ], [ 1, -1, 1 ], [ -1, 1, 1 ], [ -1, -1, 1 ] ] ) / t.sqrt( t.tensor( 3 ) )
-        n = 1 
-    elif ndir == 6 :  # icosahedron
-        V = t.tensor( [ [ p, 1, 0 ], [ p, -1, 0 ], [ 1, 0, p ], [ -1, 0, p ], [ 0, p, 1 ], [ 0, p, -1 ] ] ) / t.sqrt( p + 2 )
-        n = 2
-    elif ndir == 7 :  # rhombic dodecahedron (compound of octahedron and cube)
-        VO = t.tensor( [ [ 1, 0, 0 ], [ 0, 1, 0 ], [ 0, 0, 1 ] ] )
-        VC = t.tensor( [ [ 1, 1, 1 ], [ 1, -1, 1 ], [ -1, 1, 1 ], [ -1, -1, 1 ] ] ) / t.sqrt( t.tensor( 3 ) )
-        V = t.cat( [ VO, VC ], axis = 0 )
-        n = 1
-    elif ndir == 10 :  # dodecahedron
-        V = t.tensor( [ [ 1, 1, 1 ], [ -1, 1, 1 ], [ 1, -1, 1 ], [ 1, 1, -1 ], [ 0, 1/p, p ], [ 0, -1/p, p ], [ 1/p, p, 0 ], [ -1/p, p, 0 ], [ p, 0, 1/p], [ p, 0, -1/p ] ] ) / t.sqrt( t.tensor( 3 ) )
-        n = 2
-    elif ndir == 16 :  # rhombic triacontahedron (compound of icosahedron and dodecahedron)
-        VI = t.tensor( [ [ p, 1, 0 ], [ p, -1, 0 ], [ 1, 0, p ], [ -1, 0, p ], [ 0, p, 1 ], [ 0, p, -1 ] ] ) / t.sqrt( p + 2 )
-        VD = t.tensor( [ [ 1, 1, 1 ], [ -1, 1, 1 ], [ 1, -1, 1 ], [ 1, 1, -1 ], [ 0, 1/p, p ], [ 0, -1/p, p ], [ 1/p, p, 0 ], [ -1/p, p, 0 ], [ p, 0, 1/p], [ p, 0, -1/p ] ] ) / t.sqrt( t.tensor( 3 ) )
-        V = t.cat( [ VI, VD ], axis = 0 )
-        n = 2
-    else :
-        print( 'ndir has to be one of the following: 3, 4, 6, 7, 10, 16!' )
-        sys.exit()
-    # V = t.sqrt( t.tensor( 3. / ndir ) ) * V  # normalize the conics so that all decomposition filters add up to 1
-    # # plot directions used for the decomposition
-    # fig = plt.figure()
-    # ax = fig.add_subplot( projection='3d' )
-    # ax.scatter( [ V[ :, 0 ], -V[ :, 0 ] ], [ V[ :, 1 ], -V[ :, 1 ] ], [ V[ :, 2 ], -V[ :, 2 ] ], marker = 'o' )
-    # ax.set_aspect( 'equal' )
-    return ( ( X * V[ m, 0 ] + Y * V[ m, 1 ] + Z * V[ m,2 ] ) / R )**n  # cosine of the angle between the polygon vertex m and the vector r
+def OP( X, Y = None, Z = None, R = None, ndir = 1, m = 0 ) :
+    if Y is None :  # 1D input
+        return 1.
+    elif Z is None :  # 2D input
+        thm = t.tensor( t.pi * m / ndir )
+        return ( ( X * t.cos( thm ) + Y * t.sin( thm ) ) / R )**( ndir - 1 ) 
+    else :  # 3D input
+        # conical filter in direction m defined by a regular polyhedron with ndir 3D directioins
+        p = ( 1 + t.sqrt( t.tensor( 5 ) ) ) / 2  # golden ratio
+        if ndir == 3 :  # octahedron
+            V = t.tensor( [ [ 1, 0, 0 ], [ 0, 1, 0 ], [ 0, 0, 1 ] ] )
+            n = 1
+        elif ndir == 4 :  # cube
+            V = t.tensor( [ [ 1, 1, 1 ], [ 1, -1, 1 ], [ -1, 1, 1 ], [ -1, -1, 1 ] ] ) / t.sqrt( t.tensor( 3 ) )
+            n = 1 
+        elif ndir == 6 :  # icosahedron
+            V = t.tensor( [ [ p, 1, 0 ], [ p, -1, 0 ], [ 1, 0, p ], [ -1, 0, p ], [ 0, p, 1 ], [ 0, p, -1 ] ] ) / t.sqrt( p + 2 )
+            n = 2
+        elif ndir == 7 :  # rhombic dodecahedron (compound of octahedron and cube)
+            VO = t.tensor( [ [ 1, 0, 0 ], [ 0, 1, 0 ], [ 0, 0, 1 ] ] )
+            VC = t.tensor( [ [ 1, 1, 1 ], [ 1, -1, 1 ], [ -1, 1, 1 ], [ -1, -1, 1 ] ] ) / t.sqrt( t.tensor( 3 ) )
+            V = t.cat( [ VO, VC ], axis = 0 )
+            n = 1
+        elif ndir == 10 :  # dodecahedron
+            V = t.tensor( [ [ 1, 1, 1 ], [ -1, 1, 1 ], [ 1, -1, 1 ], [ 1, 1, -1 ], [ 0, 1/p, p ], [ 0, -1/p, p ], [ 1/p, p, 0 ], [ -1/p, p, 0 ], [ p, 0, 1/p], [ p, 0, -1/p ] ] ) / t.sqrt( t.tensor( 3 ) )
+            n = 2
+        elif ndir == 16 :  # rhombic triacontahedron (compound of icosahedron and dodecahedron)
+            VI = t.tensor( [ [ p, 1, 0 ], [ p, -1, 0 ], [ 1, 0, p ], [ -1, 0, p ], [ 0, p, 1 ], [ 0, p, -1 ] ] ) / t.sqrt( p + 2 )
+            VD = t.tensor( [ [ 1, 1, 1 ], [ -1, 1, 1 ], [ 1, -1, 1 ], [ 1, 1, -1 ], [ 0, 1/p, p ], [ 0, -1/p, p ], [ 1/p, p, 0 ], [ -1/p, p, 0 ], [ p, 0, 1/p], [ p, 0, -1/p ] ] ) / t.sqrt( t.tensor( 3 ) )
+            V = t.cat( [ VI, VD ], axis = 0 )
+            n = 2
+        else :
+            print( 'ndir has to be one of the following: 3, 4, 6, 7, 10, 16!' )
+            sys.exit()
+        # V = t.sqrt( t.tensor( 3. / ndir ) ) * V  # normalize the conics so that all decomposition filters add up to 1
+        # # plot directions used for the decomposition
+        # fig = plt.figure()
+        # ax = fig.add_subplot( projection='3d' )
+        # ax.scatter( [ V[ :, 0 ], -V[ :, 0 ] ], [ V[ :, 1 ], -V[ :, 1 ] ], [ V[ :, 2 ], -V[ :, 2 ] ], marker = 'o' )
+        # ax.set_aspect( 'equal' )
+        return ( ( X * V[ m, 0 ] + Y * V[ m, 1 ] + Z * V[ m,2 ] ) / R )**n  # cosine of the angle between the polygon vertex m and the vector r
 
 def steerablePyramid( dims, nsc, ndir ) :
     #
@@ -87,19 +86,16 @@ def steerablePyramid( dims, nsc, ndir ) :
         R = t.sqrt( X**2 + Y**2 + Z**2 )
     elif ndims == 2 :
         X, Y = t.meshgrid( t.linspace( -t.pi, t.pi, dims[ 0 ] ), t.linspace( -t.pi, t.pi, dims[ 1 ] ), indexing = 'ij' )
+        Z = None
         R = t.sqrt( X**2 + Y**2 )
     elif ndims == 1 :
         X = t.linspace( -t.pi, t.pi, dims[ 0 ] )
+        Y = Z = None
         R = t.sqrt( X**2 )
 
     O = []  # orienation filters
     for d in range( ndir ) :  # loop over directions
-        if ndims == 3 :
-            O.append( OP3( X, Y, Z, R, ndir, d ) )
-        elif ndims == 2 :
-            O.append( OP2( X, Y, ndir, d ) )
-        elif ndims == 1 :
-            O.append( 1 )  # no angular dependence in 1D
+        O.append( OP( X, Y, Z, R, ndir, d ) )
 
     nfilts = 2 + nsc * ndir  # the total number of filters
     A2 = t.zeros( list( dims ) + [ nfilts ], requires_grad = False ) # all filters squared
@@ -362,7 +358,7 @@ def vectorize( stats_all, min_level = None, weights = None ) :
             got_weights = True
             weights = t.zeros( len( stats_all ) )
             for si, s in enumerate( stats_all ) :
-                weights[ si ] = t.median( t.abs( s ) )
+                weights[ si ] = t.median( t.abs( s ) ) * t.numel( s )  # normalize by median value and number of elements in the block
                 stats_all[ si ] /= weights[ si ]  # normalize
 
     # collect all non-equivalent statistics into a vector, auto-correlations in stats_all should be non-redundant!
@@ -400,8 +396,8 @@ if __name__ == "__main__" :
     # # uncomment to test 2D image expansion
     # I = I[ :, :, 32 ].clone()  # make 2D to test 2D expansion
 
-    # # uncomment to test 1D signal expansion
-    # I = I[ :, 32, 32 ].clone()  # make 1D to test 1D expansion
+    # uncomment to test 1D signal expansion
+    I = I[ :, 32, 32 ].clone()  # make 1D to test 1D expansion
 
     if I.ndim == 1 :
         ndir = 1
