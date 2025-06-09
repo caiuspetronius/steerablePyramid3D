@@ -1,6 +1,6 @@
 # steerablePyramid3D
 A Steerable Pyramid Decomposition of 3D/2D/1D images along "3D Steerable Pyramid based on conic filters"
-Celine A. Delle Luche, Florence Denis and Atilla Baskurt. 
+Celine A. Delle Luche, Florence Denis and Atilla Baskurt and the resulting statistical image representation based on "A Parametric Texture Model Based on Joint Statistics of Complex Wavelet Coefficients" by Javier Portilla and Eero P. Simoncelli.
 
 This is an inversible decomposition of 3D/2D/1D images into band-pass oriented components (band-pass only for 1D images). Currently, the following regularly oriented 3D conic filters are implemented: octahedral (3 directions), cubic (4 directions), icosahedral (6 directions), rhombic dodecahedral (7 directions) dodecahedral (10 directions), and rhombic triacontahedron (16 directions). Any number of spatial frequency bands can be used. Any number of orientation bands (>=3) can be used for 2D images.
 
