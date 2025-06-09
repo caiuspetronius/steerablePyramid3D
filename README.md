@@ -6,4 +6,6 @@ This is an inversible decomposition of 3D/2D/1D images into band-pass oriented c
 
 The figure illustrates decomposition of a sample 3D image (a central slice is shown) into 4 spatial bands and 4 orientation bands of the cubic symmetry. 
 
-
+![Figure_3](https://github.com/user-attachments/assets/4f67aecd-b829-4ba6-bec3-8e6c07e15fb6)
+![Figure_2](https://github.com/user-attachments/assets/3bcd3253-f008-429b-855b-2ee6a865cf9e)
+![Figure_1](https://github.com/user-attachments/assets/fca25ed0-012f-4ede-be72-dae28a472e28)
