@@ -78,7 +78,7 @@ def steerablePyramid( dims, nsc, ndir ) :
     #
     # returns steerable pyramid filters, ndir = 1 for 1D inputs
     #
-    ndims = len( dims )
+    ndims = len( dims )  # number of spatial dimensions (batch, channels, ... are not counted)
     if ndims == 1 :
         ndir = 1
 
@@ -126,7 +126,7 @@ def expandImage( I, A2 ) :
     #
     # expands I into nsc frequency bands and ndir orientation bands
     #
-    ndims = I.ndim
+    ndims = A2.ndim - 1  # number of spatial dimensions (batch, channels, ... are not counted)
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     F = t.fft.fftshift( t.fft.fftn( I, dim = sdims ), dim = sdims )  # get the Fourier image centered with zero freq in the center
     Ic = t.zeros( tuple( np.append( I.shape, A2.shape[ -1 ] ) ), dtype = complex )  # filtered image components
@@ -134,9 +134,10 @@ def expandImage( I, A2 ) :
         Ic[ ..., i ] = t.fft.ifftn( t.fft.ifftshift( A2[ ..., i ] * F, dim = sdims ), dim = sdims )   # apply each filter in the Fourier space
     return Ic
 
-def var( I, mean = None ) :
+def var( I, mean = None, ndims = None ) :
     # for arbitrary shaped tensors over the last ndims dimensions
-    ndims = I.ndim
+    if ndims is None :
+        ndims = I.ndim
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     if mean is None :
         if t.all( t.isreal( I ) ) :
@@ -153,9 +154,10 @@ def var( I, mean = None ) :
             return t.mean( t.real( I - mean )**2, dim = sdims ) + \
               1j * t.mean( t.imag( I - mean )**2, dim = sdims )
 
-def skew( I, var, mean = None ) :
+def skew( I, var, mean = None, ndims = None ) :
     # for arbitrary shaped tensors over the last ndim dimensions
-    ndims = I.ndim
+    if ndims is None :
+        ndims = I.ndim
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     if mean is None :
         if t.all( t.isreal( I ) ) :
@@ -170,9 +172,10 @@ def skew( I, var, mean = None ) :
             return t.mean( t.real( I - mean )**3, dim = sdims ) / t.real( var )**(3/2) + \
               1j * t.mean( t.imag( I - mean )**3, dim = sdims ) / t.imag( var )**(3/2)
 
-def kurt( I, var, mean = None ) :
+def kurt( I, var, mean = None, ndims = None ) :
     # for arbitrary shaped tensors over the last ndim dimensions
-    ndims = I.ndim
+    if ndims is None :
+        ndims = I.ndim
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     if mean is None :
         if t.all( t.isreal( I ) ) :
@@ -187,10 +190,11 @@ def kurt( I, var, mean = None ) :
             return t.mean( t.real( I - mean )**4, dim = sdims ) / t.real( var )**2 + \
             1j * t.mean( t.imag( I - mean )**4, dim = sdims ) / t.imag( var )**2
 
-def autocorrelate( I, la ) :
+def autocorrelate( I, la, ndims = None ) :
     # autocorrelation for arbitrary shaped tensors over the last ndim dimensions
     # returns the central (2*la+1)**ndim region
-    ndims = I.ndim
+    if ndims is None :
+        ndims = I.ndim
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     A = t.fft.fftshift( t.real( t.fft.ifftn( t.abs( t.fft.fftn( I, dim = sdims ) )**2, dim = sdims ) ), dim = sdims ) / t.prod( t.tensor( I.shape ) )
     if ndims > 2 :
@@ -231,11 +235,11 @@ def make_acorr_mask( nauto, ndims ) :
         M[ h : nauto ] = 1
     return t.tensor( M, dtype = t.bool )
 
-def get_image_statistics( I, nsc, ndir, nauto, Pyr = None, redundant = True ) :
+def get_image_statistics( I, nsc, ndir, nauto, Pyr, redundant = True ) :
     #
     # Returns pixel-level and intra-band / inter-band image statistics
     #
-    ndims = I.ndim
+    ndims = Pyr.ndim - 1
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     if ndims == 1 :
         ndir = 1
@@ -247,14 +251,12 @@ def get_image_statistics( I, nsc, ndir, nauto, Pyr = None, redundant = True ) :
     max0 = t.max( I.reshape( -1, t.prod( t.tensor( I.shape[ -ndims : ] ) ) ), dim = -1 )[ 0 ]
     max0 = max0.reshape( I.shape[ : -ndims ] )
     mean0 = t.mean( I, dim = sdims, keepdim = True )
-    var0 = var( I, mean0 )
-    skew0 = skew( I, var0, mean0  )
-    kurt0 = kurt( I, var0, mean0 )
-    mean0 = t.squeeze( mean0 )
+    var0 = var( I, mean0, ndims )
+    skew0 = skew( I, var0, mean0, ndims  )
+    kurt0 = kurt( I, var0, mean0, ndims )
+    mean0 = t.squeeze( mean0, dim = sdims )
 
     # Build the steerable pyramid
-    if Pyr is None :
-        Pyr = steerablePyramid( I.shape[ -ndims : ], nsc, ndir )
     Ic = expandImage( I, Pyr )  # complex values
     meanLF = t.mean( Ic[ ..., -1 ], axis = sdims, keepdim = True )
     Ic[ ..., -1 ] = Ic[ ..., -1 ] - meanLF  # Subtract mean from the lowband
@@ -264,9 +266,10 @@ def get_image_statistics( I, nsc, ndir, nauto, Pyr = None, redundant = True ) :
 
     # Compute central autocorrelation of the magnitude of all components except LP and HP
     aIc = t.abs( Ic )  # magnitudes of the image components
-    mag_means = t.mean( aIc, axis = tuple( np.array( sdims ) - 1 ), keepdim = True )  # the last dimension stacks components 
+    sdims_here = tuple( np.array( sdims ) - 1 )
+    mag_means = t.mean( aIc, axis = sdims_here, keepdim = True )  # the last dimension stacks components 
     aIc = aIc - mag_means # Subtract mean from the magnitude
-    mag_means = t.squeeze( mag_means )
+    mag_means = t.squeeze( mag_means, dim = sdims_here )
     acorr_mag = t.zeros( tuple( np.append( I.shape[ : -ndims ], [ nauto ] * ndims + [ nsc, ndir ] ).astype( int ) ) )
     la = t.tensor( np.floor( ( nauto - 1) / 2 ).astype( int ) )
     for i in range( nsc ) :
@@ -275,13 +278,13 @@ def get_image_statistics( I, nsc, ndir, nauto, Pyr = None, redundant = True ) :
             ind = 1 + i * ndir + j  # index of the component with scale i and diraction j
             if ndims == 3 :
                 Is = aIc[ ..., 0::s, 0::s, 0::s, ind ].clone()  # the subsampled component
-                acorr_mag[ ..., :, :, :, i, j ] = autocorrelate( Is, la )
+                acorr_mag[ ..., :, :, :, i, j ] = autocorrelate( Is, la, ndims )
             elif ndims == 2 :
                 Is = aIc[ ..., 0::s, 0::s, ind ].clone()  # the subsampled component
-                acorr_mag[ ..., :, :, i, j ] = autocorrelate( Is, la )
+                acorr_mag[ ..., :, :, i, j ] = autocorrelate( Is, la, ndims )
             elif ndims == 1 :
                 Is = aIc[ ..., 0::s, ind ].clone()  # the subsampled component
-                acorr_mag[ ..., :, i, j ] = autocorrelate( Is, la )
+                acorr_mag[ ..., :, i, j ] = autocorrelate( Is, la, ndims )
 
     # Compute central autocorrelation of the partially reconstructed image components at each scale (missing smaller-scale components)
     rIc = t.real( Ic )
@@ -295,22 +298,22 @@ def get_image_statistics( I, nsc, ndir, nauto, Pyr = None, redundant = True ) :
             Is = rIc[ ..., 0::s, 0::s, 0::s, -1 ].clone()  # the lowest-pass component subsampled for this band
             if i < nsc :  # add all orientations in this band subsampled
                 Is += t.sum( rIc[ ..., 0::s, 0::s, 0::s, 1 + i * ndir : 1 + ( i + 1 ) * ndir ], axis = -1 )  # Is has mean = 0
-            acorr_recon[ ..., :, :, :, i ] = autocorrelate( Is, la )
+            acorr_recon[ ..., :, :, :, i ] = autocorrelate( Is, la, ndims )
             var_recon = acorr_recon[ ..., la, la, la, i ].clone()  # central element of the auto-correlation matrix
         elif ndims == 2 :
             Is = rIc[ ..., 0::s, 0::s, -1 ].clone()  # the lowest-pass component subsampled for this band
             if i < nsc :  # add all orientations in this band subsampled
                 Is += t.sum( rIc[ ..., 0::s, 0::s, 1 + i * ndir : 1 + ( i + 1 ) * ndir ], axis = -1 )  # Is has mean = 0
-            acorr_recon[ ..., :, :, i ] = autocorrelate( Is, la )
+            acorr_recon[ ..., :, :, i ] = autocorrelate( Is, la, ndims )
             var_recon = acorr_recon[ ..., la, la, i ].clone()  # central element of the auto-correlation matrix
         elif ndims == 1 :
             Is = rIc[ ..., 0::s, -1 ].clone()  # the lowest-pass component subsampled for this band
             if i < nsc :  # add all orientations in this band subsampled
                 Is += t.sum( rIc[ ..., 0::s, 1 + i * ndir : 1 + ( i + 1 ) * ndir ], axis = -1 )  # Is has mean = 0
-            acorr_recon[ ..., :, i ] = autocorrelate( Is, la )
+            acorr_recon[ ..., :, i ] = autocorrelate( Is, la, ndims )
             var_recon = acorr_recon[ ..., la, i ].clone()  # central element of the auto-correlation matrix
-        skew_recon[ ..., i ] = skew( Is, var_recon )
-        kurt_recon[ ..., i ] = kurt( Is, var_recon )
+        skew_recon[ ..., i ] = skew( Is, var_recon, ndims = ndims )
+        kurt_recon[ ..., i ] = kurt( Is, var_recon, ndims = ndims )
 
     # Compute the cross-correlation matrices of the coefficient magnitudes at the same scale, the same for their real parts
     tmp = tuple( np.append( I.shape[ : -ndims ], [ int( ndir * ( ndir - 1 ) / 2 ), nsc ]).astype( int ) )
