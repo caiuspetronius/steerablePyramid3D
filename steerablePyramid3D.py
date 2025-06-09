@@ -188,8 +188,8 @@ def kurt( I, var, mean = None ) :
             1j * t.mean( t.imag( I - mean )**4, dim = sdims ) / t.imag( var )**2
 
 def autocorrelate( I, la ) :
-    # autocorrelation for arbitrary shaped tensors over the last 3 dimensions
-    # returns the central 2*la+1 x 2*la+1 x 2*la+1 region
+    # autocorrelation for arbitrary shaped tensors over the last ndim dimensions
+    # returns the central (2*la+1)**ndim region
     ndims = I.ndim
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     A = t.fft.fftshift( t.real( t.fft.ifftn( t.abs( t.fft.fftn( I, dim = sdims ) )**2, dim = sdims ) ), dim = sdims ) / t.prod( t.tensor( I.shape ) )
@@ -397,8 +397,8 @@ if __name__ == "__main__" :
     # # uncomment to test 2D image expansion
     # I = I[ :, :, 32 ].clone()  # make 2D to test 2D expansion
 
-    # uncomment to test 1D signal expansion
-    I = I[ :, 32, 32 ].clone()  # make 1D to test 1D expansion
+    # # uncomment to test 1D signal expansion
+    # I = I[ :, 32, 32 ].clone()  # make 1D to test 1D expansion
 
     if I.ndim == 1 :
         ndir = 1
