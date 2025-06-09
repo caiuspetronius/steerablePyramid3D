@@ -8,10 +8,12 @@ A sample 3D image:
 <img width="300" alt="Sample 3D image" src="https://github.com/user-attachments/assets/4bef7169-14e4-40c8-985f-c5bd18d43d09" />
 
 Expansion of the image (central slice is shown) into 4 spatial bands and 4 orientation bands of the cubic symmetry. 
-![Figure_1](https://github.com/user-attachments/assets/fca25ed0-012f-4ede-be72-dae28a472e28)
+![Figure_1](https://github.com/user-attachments/assets/a6a62a05-fbdc-444d-8854-3ccc4e2daa0d)
+
 
 Expansion of the central slice (2D image) into 4 spatial bands and 4 orientation bands
-![Figure_2](https://github.com/user-attachments/assets/3bcd3253-f008-429b-855b-2ee6a865cf9e)
+![Figure_2](https://github.com/user-attachments/assets/0d1d92fb-cac4-4ac7-b912-e1ae8eb089ea)
+
 
 Expansion of the central row of the central slice (1D image)
 ![Figure_3](https://github.com/user-attachments/assets/4f67aecd-b829-4ba6-bec3-8e6c07e15fb6)
