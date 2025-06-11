@@ -18,8 +18,14 @@ The imaginary part (asymmetric features)
 ![Figure_3D_imag](https://github.com/user-attachments/assets/e73ab13e-7857-4ac6-80cc-c24062b8af83)
 
 Expansion of the central slice (2D image) into 4 spatial bands and 4 orientation bands.
-The absolte value
+The absolute value
 ![Figure_2D_amp](https://github.com/user-attachments/assets/588310d1-4601-4b9a-9d8e-f01d7eb7e7a7)
+
+The real part (symmetric features)
+![Figure_2D_real](https://github.com/user-attachments/assets/b81aa5b5-71c4-4200-b021-4c134ce9df4c)
+
+The imaginary part (asymmetric features)
+![Figure_2D_imag](https://github.com/user-attachments/assets/6666f057-bbf6-4938-af1a-2752ff897e7d)
 
 Expansion of the central row of the central slice (1D image).
 The real part (no imaginary part for 1D images)
