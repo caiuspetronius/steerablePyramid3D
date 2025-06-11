@@ -7,36 +7,55 @@ import matplotlib.pyplot as plt
 
 '''
 Based on "3D Steerable Pyramid based on conic filters" by
-C´eline A. Delle Luche, Florence Denis and Atilla Baskurt and
+Celine A. Delle Luche, Florence Denis and Atilla Baskurt and
 "A Parametric Texture Model Based on Joint Statistics
 of Complex Wavelet Coefficients" by
 Javier Portilla and Eero P. Simoncelli
 '''
 
-def LP( R, l ) :
-    # low-pass filter of order l in the interval [ 0, k ]
-    a = t.pi / 4 / ( l + 1 )
-    b = 2 * a
-    LP = t.sqrt( 1/2 * ( 1 + t.cos( t.pi * ( R - a ) / ( b - a ) ) ) )
-    LP[ R >= b ] = 0
-    LP[ R <= a ] = 1
+def LP( R, l, ref = 'PS' ) :
+    # low-pass filter of order l
+    a = t.pi / 4
+    b = t.pi / 2
+    if ref == 'CS' :  # Simplified Design of Steerable Pyramid Filters", K. R. Castleman, M. Schulze, Q. Wu
+        a /= 2**l
+        b = 2 * a
+        LP = t.sqrt( 1/2 * ( 1 + t.cos( t.pi * ( R - a ) / ( b - a ) ) ) )
+        LP[ R <= a ] = 1
+        LP[ R >= b ] = 0
+    elif ref == 'PS' :  # "A Parametric Texture Model Based on Joint Statistics of Complex Wavelet Coefficients" by Portilla and Simoncelli
+        LP = t.cos( t.pi / 2 * t.log2( 4 * R * 2**l / t.pi ) )
+        LP[ R * 2**l <= a ] = 1
+        LP[ R * 2**l >= b ] = 0
     return LP
 
-def HP( R, l ) :
+def HP( R, l, ref = 'PS' ) :
     # high-pass filter of order l in the interval [ 0, k ]
-    a = t.pi / 4 / ( l + 1 )
-    b = 2 * a
-    HP = t.sqrt( 1/2 * ( 1 - t.cos( t.pi * ( R - a ) / ( b - a ) ) ) )
-    HP[ R >= b ] = 1
-    HP[ R <= a ] = 0
+    a = t.pi / 4
+    b = t.pi / 2
+    if ref == 'CS' :  # Simplified Design of Steerable Pyramid Filters", K. R. Castleman, M. Schulze, Q. Wu
+        a /= 2**l
+        b = 2 * a
+        HP = t.sqrt( 1/2 * ( 1 - t.cos( t.pi * ( R - a ) / ( b - a ) ) ) )
+        HP[ R >= b ] = 1
+        HP[ R <= a ] = 0
+    elif ref == 'PS' :  # "A Parametric Texture Model Based on Joint Statistics of Complex Wavelet Coefficients" by Portilla and Simoncelli
+        HP = t.cos( t.pi / 2 * t.log2( 2 * R * 2**l / t.pi ) )
+        HP[ R * 2**l >= b ] = 1
+        HP[ R * 2**l <= a ] = 0
     return HP
 
-def OP( X, Y = None, Z = None, R = None, ndir = 1, m = 0 ) :
+def OP( X, Y = None, Z = None, R = None, ndir = 1, m = 0, ref = 'PS' ) :
     if Y is None :  # 1D input
         return 1.
     elif Z is None :  # 2D input
+        # K. R. Castleman, M. A. Schulze, and Q. Wu, “Simplified design of steerable pyramid filters,”
         thm = t.tensor( t.pi * m / ndir )
-        return ( ( X * t.cos( thm ) + Y * t.sin( thm ) ) / R )**( ndir - 1 ) 
+        OP = ( X * t.cos( thm ) + Y * t.sin( thm ) ) / R  # cos of the angle between R and thm direction
+        if ref == 'PS' :
+            # Javier Portilla and Eero P. Simoncelli in "A Parametric Texture Model Based on Joint Statistics of Complex Wavelet Coefficients" suggested using asymmetric filter to create complex expansion components of an image
+            OP[ OP < 0 ] = 0  # this makes the filter asymmetric (complex expansion components result)
+        return OP**( ndir - 1 )
     else :  # 3D input
         # conical filter in direction m defined by a regular polyhedron with ndir 3D directioins
         p = ( 1 + t.sqrt( t.tensor( 5 ) ) ) / 2  # golden ratio
@@ -71,50 +90,70 @@ def OP( X, Y = None, Z = None, R = None, ndir = 1, m = 0 ) :
         # ax = fig.add_subplot( projection='3d' )
         # ax.scatter( [ V[ :, 0 ], -V[ :, 0 ] ], [ V[ :, 1 ], -V[ :, 1 ] ], [ V[ :, 2 ], -V[ :, 2 ] ], marker = 'o' )
         # ax.set_aspect( 'equal' )
-        return ( ( X * V[ m, 0 ] + Y * V[ m, 1 ] + Z * V[ m,2 ] ) / R )**n  # cosine of the angle between the polygon vertex m and the vector r
+        OP = ( X * V[ m, 0 ] + Y * V[ m, 1 ] + Z * V[ m,2 ] ) / R
+        if ref == 'PS' :
+            # Javier Portilla and Eero P. Simoncelli in "A Parametric Texture Model Based on Joint Statistics of Complex Wavelet Coefficients" suggested using asymmetric filter to create complex expansion components of an image
+            OP[ OP < 0 ] = 0  # this makes the filter asymmetric (complex expansion components result)
+        return OP**n  # cosine of the angle between the polygon vertex m and the vector r
 
-def steerablePyramid( dims, nsc, ndir ) :
+def steerablePyramid( dims, nsc, ndir, ref = 'PS' ) :
     #
     # returns steerable pyramid filters, ndir = 1 for 1D inputs
     #
+    if ref != 'PS' and ref != 'CS' :
+        print( "Only CS and PS options are allowed!" )
+        sys.exit()
+
     ndims = len( dims )  # number of spatial dimensions (batch, channels, ... are not counted)
     if ndims == 1 :
         ndir = 1
 
     if ndims == 3 :
-        X, Y, Z = t.meshgrid( t.linspace( -t.pi, t.pi, dims[ 0 ] ), t.linspace( -t.pi, t.pi, dims[ 1 ] ), t.linspace( -t.pi, t.pi, dims[ 2 ] ), indexing = 'ij' )
+        X, Y, Z = t.meshgrid( t.linspace( -t.pi/2, t.pi/2, dims[ 0 ] ), t.linspace( -t.pi/2, t.pi/2, dims[ 1 ] ), t.linspace( -t.pi/2, t.pi/2, dims[ 2 ] ), indexing = 'xy' )
+        X = X - t.pi / ( dims[ 0 ] - 1 )  # the 1 px shift is necessary to align origin with t.fftn origin
+        Y = Y - t.pi / ( dims[ 1 ] - 1 )
+        Z = Z - t.pi / ( dims[ 2 ] - 1 )
         R = t.sqrt( X**2 + Y**2 + Z**2 )
     elif ndims == 2 :
-        X, Y = t.meshgrid( t.linspace( -t.pi, t.pi, dims[ 0 ] ), t.linspace( -t.pi, t.pi, dims[ 1 ] ), indexing = 'ij' )
+        X, Y = t.meshgrid( t.linspace( -t.pi/2, t.pi/2, dims[ 0 ] ), t.linspace( -t.pi/2, t.pi/2, dims[ 1 ] ), indexing = 'xy' )
+        X = X - t.pi/2 / ( dims[ 0 ] - 1 )  # the 1 px shift is necessary to align origin with t.fftn origin
+        Y = Y - t.pi/2 / ( dims[ 1 ] - 1 )
         Z = None
         R = t.sqrt( X**2 + Y**2 )
     elif ndims == 1 :
         X = t.linspace( -t.pi, t.pi, dims[ 0 ] )
+        X = X - t.pi / ( dims[ 0 ] - 1 )  # the 1 px shift is necessary to align origin with t.fftn origin
         Y = Z = None
         R = t.sqrt( X**2 )
 
     O = []  # orienation filters
     for d in range( ndir ) :  # loop over directions
-        O.append( OP( X, Y, Z, R, ndir, d ) )
+        O.append( OP( X, Y, Z, R, ndir, d, ref ) )
 
     nfilts = 2 + nsc * ndir  # the total number of filters
     A2 = t.zeros( list( dims ) + [ nfilts ], requires_grad = False ) # all filters squared
-    H = HP( R, 0 )  # zeroth-order high-pass
-    L = LP( R, 0 )  # zeroth-order low-pass
+    H = HP( R, 0, ref )  # zeroth-order high-pass
+    L = LP( R, 0, ref )  # zeroth-order low-pass
     cnt = 0
-    A2[ ..., cnt ] = H**2
+    # A2[ ..., cnt ] = H**2
+    A2[ ..., cnt ] = H
     for sc in range( 1, nsc + 1 ) :  # loop over frequency bands
         nrm = 0  # calculate normalization of angular functions so that they sum up to 1 with the next low-pass**2
+        H = HP( R, sc, ref )
         for d in range( ndir ) :  # loop over directions
-            nrm += ( O[ d ] * HP( R, sc ) )**2
+            nrm += ( O[ d ] * H )**2
         nrm = t.sqrt( t.max( nrm ) )
-        b = HP( R, sc ) * L  # band-pass filter
+        if ref == 'PS' :  # need to increase the filter power by 2 to account for one lobe only
+            nrm /= t.sqrt( t.tensor( 2. ) )
+        B = H * L  # band-pass filter
         for d in range( ndir ) :  # loop over directions
             cnt += 1
-            BO = O[ d ] / nrm * b  # band-pass oriented
-            A2[ ..., cnt ] = t.abs( BO )**2
-        L = LP( R, sc ) * L  # the next-scale low-pass filter
-    A2[ ..., cnt + 1 ] = L**2
+            BO = O[ d ] / nrm * B  # band-pass oriented
+            # A2[ ..., cnt ] = t.abs( BO )**2
+            A2[ ..., cnt ] = BO
+        L = LP( R, sc, ref ) * L  # the next-scale low-pass filter
+    # A2[ ..., cnt + 1 ] = L**2
+    A2[ ..., cnt + 1 ] = L
 
     return A2
 
@@ -129,6 +168,20 @@ def expandImage( I, A2 ) :
     for i in range( A2.shape[ -1 ] ) :
         Ic[ ..., i ] = t.fft.ifftn( t.fft.ifftshift( A2[ ..., i ] * F, dim = sdims ), dim = sdims )   # apply each filter in the Fourier space
     return Ic
+
+def restoreImage( Ic, A2 ) :
+    #
+    # restores I from nsc frequency bands and ndir orientation components Ic
+    #
+    ndims = A2.ndim - 1  # number of spatial dimensions (batch, channels, ... are not counted)
+    sdims = list( range( -ndims - 1, -1 ) )  # spatial dims in an image
+    Fc = t.fft.fftshift( t.fft.fftn( Ic, dim = sdims ), dim = sdims )  # get the Fourier image centered with zero freq in the center
+    F = t.zeros( tuple( Ic.shape[ : -1 ] ), dtype = complex )  # filtered image components
+    for i in range( A2.shape[ -1 ] ) :
+        F += A2[ ..., i ] * Fc[ ..., i ]   # apply each filter in the Fourier space
+    sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
+    I = t.fft.ifftn( t.fft.ifftshift( F, dim = sdims ), dim = sdims )
+    return I
 
 def var( I, mean = None, ndims = None ) :
     # for arbitrary shaped tensors over the last ndims dimensions
@@ -403,23 +456,28 @@ if __name__ == "__main__" :
     if I.ndim == 1 :
         ndir = 1
 
-    # get image pyramid expansion
-    Pyr = steerablePyramid( I.shape, nsc, ndir )
+    # Get the set of image pyramid filters in the Fourier space. 
+    # ref = CS or PS specifies Castellman or Portillo choice of filters.
+    # The main difference is that Portillo and Simoncelli use asymmetric 
+    # half-lobe oriented filters, while Castellman filters are symmetric. 
+    Pyr = steerablePyramid( I.shape, nsc, ndir, ref = 'CS' )
 
     # get image statistics and put all non-equivalent statistics into a vector
     stats_all = get_image_statistics( I, nsc, ndir, nauto, Pyr, redundant = False )
     stats_all = vectorize( stats_all, min_level = None )
     print( 'Calculated {} statistics'.format( stats_all.shape[ 0 ] ) )
 
-    # check that filters add up to 1
-    s = t.sum( Pyr, axis = -1 )  # add up all filters
+    # check that filters add up to 1 (only true for the CS filters)
+    s = t.sum( Pyr**2, axis = -1 )  # add up all filters
     print( 'Minimum filter sum value: {}'.format( t.min( s ) ) )
     print( 'Maximum filter sum value: {}'.format( t.max( s ) ) )
 
     # expand I into nsc frequency bands and ndir orientation bands
-    Ic = t.real( expandImage( I, Pyr ) )
-    res = t.sum( Ic, axis = -1 )
-    err = t.abs( res - I )
+    # Ic = t.real( expandImage( I, Pyr ) )
+    Ic = expandImage( I, Pyr )
+    Ir = t.real( restoreImage( Ic, Pyr ) )
+    # Ir = t.real( t.sum( Ic, axis = -1 ) )
+    err = t.abs( Ir - I )
     print( 'Mean absolute error of the reconstruction: {}', format( t.mean( err ) ) )
     print( 'Max absolute error of the reconstruction: {}', format( t.max( err ) ) )
 
@@ -428,13 +486,27 @@ if __name__ == "__main__" :
     fig, axs = plt.subplots( nsc, 1 + ndir )
     fig.set_figheight( 8 )
     fig.set_figwidth( 8 * np.max( [ 1, np.floor( ndir / nsc ).astype( int ) ] ) )
+    mult = 1.  # multiplier to adjust image contrast limits
     if I.ndim == 3 :
         sl = I.shape[ 2 ] // 2  # draw this slice of the 3D volume
         img = I[ sl, ... ]
         imgc = Ic[ sl, ... ]
+        Ir = Ir[ sl, ... ]
+        mult = 2.
     else :
         img = I
-        imgc = Ic
+        imgc = t.abs( Ic )
+
+    plot_what = 'abs'  # choose between plotting real/imag/abs values of the components
+    lc = 1
+    if plot_what == 'abs' :
+        imgc = t.abs( imgc )
+        lc = 0  # set lower contrast limit to 0
+    elif plot_what == 'real' :
+        imgc = t.real( imgc )
+    else :
+        imgc = t.imag( imgc )
+
     cnt = 1
     for i in range( nsc ) :
         if i == 0 :
@@ -447,26 +519,26 @@ if __name__ == "__main__" :
             if I.ndim == 1 :
                 axs[ i, 0 ].plot( imgc[ ..., -1 ] )
             else :
-                axs[ i, 0 ].imshow( imgc[ ..., -1 ], vmin = -1, vmax = 1, cmap = 'gray' )
+                axs[ i, 0 ].imshow( imgc[ ..., -1 ], vmin = 0, vmax = 1, cmap = 'gray' )
             axs[ i, 0 ].set_title( 'Lowest-pass', fontsize=12 )
         elif i == 2 :
             if I.ndim == 1 :
                 axs[ i, 0 ].plot( imgc[ ..., 0 ] )
             else :
-                axs[ i, 0 ].imshow( imgc[ ..., 0 ], vmin = -.2, vmax = .2, cmap = 'gray' )
+                axs[ i, 0 ].imshow( imgc[ ..., 0 ], vmin = -0.2 * mult * lc, vmax = .2 * mult, cmap = 'gray' )
             axs[ i, 0 ].set_title( 'Highest-pass', fontsize=12 )
         elif i == 3 :
             if I.ndim == 1 :
                 axs[ i, 0 ].plot( t.sum( imgc, axis = -1 ) )
             else :
-                axs[ i, 0 ].imshow( t.sum( imgc, axis = -1 ), vmin = .25, vmax = .75, cmap = 'gray' )
+                axs[ i, 0 ].imshow( Ir, vmin = .25, vmax = .75, cmap = 'gray' )
             axs[ i, 0 ].set_title( 'Reconstruction', fontsize=12 )
 
         for j in range( 1, 1 + ndir ) :
             if I.ndim == 1 :
                 axs[ i, j ].plot( imgc[ ..., cnt ] )
             else :
-                axs[ i, j ].imshow( imgc[ ..., cnt ], vmin = -.1, vmax = .1, cmap = 'gray' )
+                axs[ i, j ].imshow( imgc[ ..., cnt ], vmin = -.1 * mult * lc, vmax = .1 * mult, cmap = 'gray' )
             axs[ i, j ].set_title( 'BP' + str( i + 1  ) +'Ori' + str( j ), fontsize=12 )
             cnt += 1
 
