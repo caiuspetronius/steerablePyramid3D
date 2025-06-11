@@ -495,17 +495,18 @@ if __name__ == "__main__" :
         mult = 2.
     else :
         img = I
-        imgc = t.abs( Ic )
+        imgc = Ic
 
-    plot_what = 'abs'  # choose between plotting real/imag/abs values of the components
-    lc = 1
-    if plot_what == 'abs' :
-        imgc = t.abs( imgc )
-        lc = 0  # set lower contrast limit to 0
-    elif plot_what == 'real' :
-        imgc = t.real( imgc )
-    else :
-        imgc = t.imag( imgc )
+    plot_what = 'imag'  # choose between plotting real/imag/abs values of the components
+    if I.ndim > 1 :
+        lc = 1
+        if plot_what == 'abs' :
+            imgc = t.abs( imgc )
+            lc = 0  # set lower contrast limit to 0
+        elif plot_what == 'real' :
+            imgc = t.real( imgc )
+        else :
+            imgc = t.imag( imgc )
 
     cnt = 1
     for i in range( nsc ) :
@@ -517,26 +518,26 @@ if __name__ == "__main__" :
             axs[ i, 0 ].set_title( 'Original', fontsize=12 )
         elif i == 1 :
             if I.ndim == 1 :
-                axs[ i, 0 ].plot( imgc[ ..., -1 ] )
+                axs[ i, 0 ].plot( t.real( imgc[ ..., -1 ] ) )
             else :
                 axs[ i, 0 ].imshow( imgc[ ..., -1 ], vmin = 0, vmax = 1, cmap = 'gray' )
             axs[ i, 0 ].set_title( 'Lowest-pass', fontsize=12 )
         elif i == 2 :
             if I.ndim == 1 :
-                axs[ i, 0 ].plot( imgc[ ..., 0 ] )
+                axs[ i, 0 ].plot( t.real( imgc[ ..., 0 ] ) )
             else :
                 axs[ i, 0 ].imshow( imgc[ ..., 0 ], vmin = -0.2 * mult * lc, vmax = .2 * mult, cmap = 'gray' )
             axs[ i, 0 ].set_title( 'Highest-pass', fontsize=12 )
         elif i == 3 :
             if I.ndim == 1 :
-                axs[ i, 0 ].plot( t.sum( imgc, axis = -1 ) )
+                axs[ i, 0 ].plot( Ir )
             else :
                 axs[ i, 0 ].imshow( Ir, vmin = .25, vmax = .75, cmap = 'gray' )
             axs[ i, 0 ].set_title( 'Reconstruction', fontsize=12 )
 
         for j in range( 1, 1 + ndir ) :
             if I.ndim == 1 :
-                axs[ i, j ].plot( imgc[ ..., cnt ] )
+                axs[ i, j ].plot( t.real( imgc[ ..., cnt ] ) )
             else :
                 axs[ i, j ].imshow( imgc[ ..., cnt ], vmin = -.1 * mult * lc, vmax = .1 * mult, cmap = 'gray' )
             axs[ i, j ].set_title( 'BP' + str( i + 1  ) +'Ori' + str( j ), fontsize=12 )
@@ -546,3 +547,4 @@ if __name__ == "__main__" :
             axs[ i, j ].set_xticks( [] )
             axs[ i, j ].set_yticks( [] )
     plt.show()
+    
