@@ -402,6 +402,7 @@ def get_image_statistics( I, nsc, ndir, nauto, Pyr, redundant = True ) :
     return [ stats_vox, mag_means, skew_recon, kurt_recon, acorr_recon, acorr_mag, xcorr_mag, xcorr_real, xcorr_lmag, xcorr_lreal, xcorr_limag ]
 
 def vectorize( stats_all, min_level = None, weights = None ) :
+    # collect all non-equivalent statistics into a vector for each image in a batch and the image channel
     got_weights = False
     if weights is not None :
         if t.is_tensor( weights ) and len( weights ) == len( stats_all ) :  # normalize by weights
@@ -423,15 +424,15 @@ def vectorize( stats_all, min_level = None, weights = None ) :
         stats = t.cat( [ stats_vox, mag_means ], dim = -1 )
     else :
         stats = mag_means[ ..., 1 + min_level * ndirs : ]
-    vstats = t.cat( [ stats_vox[ ..., : -1 ], skew_recon, kurt_recon, mag_means ], dim = -1 )
-    # vstats =  t.cat( [ stats, skew_recon[ ..., min_level : ], kurt_recon[ ..., min_level : ], \
-    #                     t.flatten( acorr_recon[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
-    #                     t.flatten( acorr_mag[ ..., :, min_level :, : ], start_dim = -3, end_dim = -1 ), \
-    #                     t.flatten( xcorr_mag[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
-    #                     t.flatten( xcorr_real[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
-    #                     t.flatten( xcorr_lmag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
-    #                     t.flatten( xcorr_lreal[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
-    #                     t.flatten( xcorr_limag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ) ], dim = -1 )
+    # vstats = t.cat( [ stats_vox[ ..., : -1 ], skew_recon, kurt_recon, mag_means ], dim = -1 )
+    vstats =  t.cat( [ stats, skew_recon[ ..., min_level : ], kurt_recon[ ..., min_level : ], \
+                        t.flatten( acorr_recon[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
+                        t.flatten( acorr_mag[ ..., :, min_level :, : ], start_dim = -3, end_dim = -1 ), \
+                        t.flatten( xcorr_mag[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
+                        t.flatten( xcorr_real[ ..., :, min_level : ], start_dim = -2, end_dim = -1 ), \
+                        t.flatten( xcorr_lmag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
+                        t.flatten( xcorr_lreal[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
+                        t.flatten( xcorr_limag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ) ], dim = -1 )
     if got_weights :
         return vstats, weights
     else :
@@ -547,4 +548,3 @@ if __name__ == "__main__" :
             axs[ i, j ].set_xticks( [] )
             axs[ i, j ].set_yticks( [] )
     plt.show()
-    
