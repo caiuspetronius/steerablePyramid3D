@@ -14,7 +14,7 @@ Javier Portilla and Eero P. Simoncelli
 '''
 
 def LP( R, l, ref = 'PS' ) :
-    # low-pass filter of order l
+    # low-pass filter of order l in the Fourier space
     a = t.pi / 4
     b = t.pi / 2
     if ref == 'CS' :  # Simplified Design of Steerable Pyramid Filters", K. R. Castleman, M. Schulze, Q. Wu
@@ -30,7 +30,7 @@ def LP( R, l, ref = 'PS' ) :
     return LP
 
 def HP( R, l, ref = 'PS' ) :
-    # high-pass filter of order l in the interval [ 0, k ]
+    # high-pass filter of order l in the Fourier space
     a = t.pi / 4
     b = t.pi / 2
     if ref == 'CS' :  # Simplified Design of Steerable Pyramid Filters", K. R. Castleman, M. Schulze, Q. Wu
@@ -46,7 +46,7 @@ def HP( R, l, ref = 'PS' ) :
     return HP
 
 def OP( X, Y = None, Z = None, R = None, ndir = 1, m = 0, ref = 'PS' ) :
-    # orientation-pass filter of direction m among ndir directions
+    # orientation-pass filter in the Fourier space for orientation m among ndir possible ones
     if Y is None :  # 1D input
         return 1.
     elif Z is None :  # 2D input
@@ -132,14 +132,14 @@ def steerablePyramid( dims, nsc, ndir, ref = 'PS' ) :
         O.append( OP( X, Y, Z, R, ndir, d, ref ) )
 
     nfilts = 2 + nsc * ndir  # the total number of filters
-    A2 = t.zeros( list( dims ) + [ nfilts ], requires_grad = False ) # all filters squared
+    A = t.zeros( list( dims ) + [ nfilts ], requires_grad = False ) # all filters
     H = HP( R, 0, ref )  # zeroth-order high-pass
     L = LP( R, 0, ref )  # zeroth-order low-pass
     cnt = 0
-    # A2[ ..., cnt ] = H**2
-    A2[ ..., cnt ] = H
+    # A[ ..., cnt ] = H**2
+    A[ ..., cnt ] = H
     for sc in range( 1, nsc + 1 ) :  # loop over frequency bands
-        nrm = 0  # calculate normalization of angular functions so that they sum up to 1 with the next low-pass**2
+        nrm = 0  # calculate the normalization of angular functions
         H = HP( R, sc, ref )
         for d in range( ndir ) :  # loop over directions
             nrm += ( O[ d ] * H )**2
@@ -150,36 +150,36 @@ def steerablePyramid( dims, nsc, ndir, ref = 'PS' ) :
         for d in range( ndir ) :  # loop over directions
             cnt += 1
             BO = O[ d ] / nrm * B  # band-pass oriented
-            # A2[ ..., cnt ] = t.abs( BO )**2
-            A2[ ..., cnt ] = BO
+            # A[ ..., cnt ] = t.abs( BO )**2
+            A[ ..., cnt ] = BO
         L = LP( R, sc, ref ) * L  # the next-scale low-pass filter
-    # A2[ ..., cnt + 1 ] = L**2
-    A2[ ..., cnt + 1 ] = L
+    # A[ ..., cnt + 1 ] = L**2
+    A[ ..., cnt + 1 ] = L
 
-    return A2
+    return A
 
-def expandImage( I, A2 ) :
+def expandImage( I, A ) :
     #
-    # expands I into nsc frequency bands and ndir orientation bands
+    # expands I into nsc frequency bands and ndir orientation bands using filters A
     #
-    ndims = A2.ndim - 1  # number of spatial dimensions (batch, channels, ... are not counted)
+    ndims = A.ndim - 1  # number of spatial dimensions (batch, channels, ... are not counted)
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     F = t.fft.fftshift( t.fft.fftn( I, dim = sdims ), dim = sdims )  # get the Fourier image centered with zero freq in the center
-    Ic = t.zeros( tuple( np.append( I.shape, A2.shape[ -1 ] ) ), dtype = complex )  # filtered image components
-    for i in range( A2.shape[ -1 ] ) :
-        Ic[ ..., i ] = t.fft.ifftn( t.fft.ifftshift( A2[ ..., i ] * F, dim = sdims ), dim = sdims )   # apply each filter in the Fourier space
+    Ic = t.zeros( tuple( np.append( I.shape, A.shape[ -1 ] ) ), dtype = complex )  # filtered image components
+    for i in range( A.shape[ -1 ] ) :
+        Ic[ ..., i ] = t.fft.ifftn( t.fft.ifftshift( A[ ..., i ] * F, dim = sdims ), dim = sdims )   # apply each filter in the Fourier space
     return Ic
 
-def restoreImage( Ic, A2 ) :
+def restoreImage( Ic, A ) :
     #
-    # restores I from nsc frequency bands and ndir orientation components Ic
+    # restores I from nsc frequency bands and ndir orientation components Ic using filters A
     #
-    ndims = A2.ndim - 1  # number of spatial dimensions (batch, channels, ... are not counted)
+    ndims = A.ndim - 1  # number of spatial dimensions (batch, channels, ... are not counted)
     sdims = list( range( -ndims - 1, -1 ) )  # spatial dims in an image
     Fc = t.fft.fftshift( t.fft.fftn( Ic, dim = sdims ), dim = sdims )  # get the Fourier image centered with zero freq in the center
     F = t.zeros( tuple( Ic.shape[ : -1 ] ), dtype = complex )  # filtered image components
-    for i in range( A2.shape[ -1 ] ) :
-        F += A2[ ..., i ] * Fc[ ..., i ]   # apply each filter in the Fourier space
+    for i in range( A.shape[ -1 ] ) :
+        F += A[ ..., i ] * Fc[ ..., i ]   # apply each filter in the Fourier space
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     I = t.fft.ifftn( t.fft.ifftshift( F, dim = sdims ), dim = sdims )
     return I
