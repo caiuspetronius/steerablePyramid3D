@@ -7,13 +7,20 @@ This is an inversible decomposition of 3D/2D/1D images into band-pass oriented c
 A sample 3D image:
 <img width="300" alt="Sample 3D image" src="https://github.com/user-attachments/assets/4bef7169-14e4-40c8-985f-c5bd18d43d09" />
 
-Expansion of the image (central slice is shown) into 4 spatial bands and 4 orientation bands of the cubic symmetry. 
-![Figure_1](https://github.com/user-attachments/assets/a6a62a05-fbdc-444d-8854-3ccc4e2daa0d)
+Expansion of the image (central slice is shown) into 4 spatial bands and 4 orientation bands of the cubic symmetry.
+The absolte value (magnitude)
+![Figure_3D_amp](https://github.com/user-attachments/assets/53a9912d-2c3e-4064-bcc5-64b315501105)
 
+The real part (symmetric features)
+![Figure_3D_real](https://github.com/user-attachments/assets/fb37e349-5b06-4837-8ac4-1e8bd1aafd4f)
+
+The imaginary part (asymmetric features)
+![Figure_3D_imag](https://github.com/user-attachments/assets/e73ab13e-7857-4ac6-80cc-c24062b8af83)
 
 Expansion of the central slice (2D image) into 4 spatial bands and 4 orientation bands
-![Figure_2](https://github.com/user-attachments/assets/0d1d92fb-cac4-4ac7-b912-e1ae8eb089ea)
-
+The absolte value (magnitude)
+![Figure_2D_amp](https://github.com/user-attachments/assets/588310d1-4601-4b9a-9d8e-f01d7eb7e7a7)
 
 Expansion of the central row of the central slice (1D image)
-![Figure_3](https://github.com/user-attachments/assets/4f67aecd-b829-4ba6-bec3-8e6c07e15fb6)
+The absolte value (magnitude)
+![Figure_1D_amp](https://github.com/user-attachments/assets/79f6bd5a-aac6-46ce-b6cb-72b7e2e3ba03)
