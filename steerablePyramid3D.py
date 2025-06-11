@@ -46,6 +46,7 @@ def HP( R, l, ref = 'PS' ) :
     return HP
 
 def OP( X, Y = None, Z = None, R = None, ndir = 1, m = 0, ref = 'PS' ) :
+    # orientation-pass filter of direction m among ndir directions
     if Y is None :  # 1D input
         return 1.
     elif Z is None :  # 2D input
