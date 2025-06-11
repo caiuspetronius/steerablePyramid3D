@@ -22,5 +22,6 @@ The absolte value
 ![Figure_2D_amp](https://github.com/user-attachments/assets/588310d1-4601-4b9a-9d8e-f01d7eb7e7a7)
 
 Expansion of the central row of the central slice (1D image).
-The absolte value
-![Figure_1D_amp](https://github.com/user-attachments/assets/79f6bd5a-aac6-46ce-b6cb-72b7e2e3ba03)
+The real part (blue), imaginary part (red), absolute value (magenta)
+![Figure_1D_all](https://github.com/user-attachments/assets/0f38d694-19d6-4fe2-931b-9f2aa31a4870)
+
