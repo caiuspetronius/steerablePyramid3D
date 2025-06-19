@@ -8,6 +8,7 @@ A sample 3D image:
 <img width="300" alt="Sample 3D image" src="https://github.com/user-attachments/assets/4bef7169-14e4-40c8-985f-c5bd18d43d09" />
 
 Expansion of the image (central slice is shown) into 4 spatial bands and 4 orientation bands (cubic symmetry).
+
 The real part (symmetric features)
 ![sawtooth_3D_real](https://github.com/user-attachments/assets/eb4162fa-28fd-43b4-a87e-6eced859b04c)
 
@@ -15,6 +16,7 @@ The imaginary part (asymmetric features)
 ![sawtooth_3D_imag](https://github.com/user-attachments/assets/da3d49bd-5a82-4662-8ab6-05c5d453e8a5)
 
 Expansion of the central slice (2D image) into 4 spatial bands and 4 orientation bands.
+
 The real part (symmetric features)
 ![sawtooth_2D_real](https://github.com/user-attachments/assets/baa7f02f-f876-459d-a63b-5b352408643e)
 
@@ -22,6 +24,7 @@ The imaginary part (asymmetric features)
 ![sawtooth_2D_imag](https://github.com/user-attachments/assets/9c027ec3-ef65-4689-852c-0b9dcc156b52)
 
 Expansion of the central row of the central slice (1D image).
+
 The real part (no imaginary part for 1D images)
 ![sawtooth_1D_real](https://github.com/user-attachments/assets/89596f6c-8c0b-4bb7-b588-f75d8ef89a41)
 
