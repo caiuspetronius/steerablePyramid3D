@@ -440,12 +440,6 @@ def get_image_statistics( I, nsc, ndir, nauto, Pyr, redundant = True ) :
     std_recon = t.zeros( tmp )  # keep central elements of the autocorrelation matrices
     # st = datetime.datetime.now()
     for i in range( nsc + 1 ) :
-        # if ndims == 3 :
-        #     acorr_recon[ ..., :, :, :, i ], var_recon = autocorrelate( Ir[ i ], la, ndims )
-        # elif ndims == 2 :
-        #     acorr_recon[ ..., :, :, i ], var_recon = autocorrelate( Ir[ i ], la, ndims )
-        # elif ndims == 1 :
-        #     acorr_recon[ ..., :, i ], var_recon = autocorrelate( Ir[ i ], la, ndims )
         acorr_recon[ ..., i ], var_recon = autocorrelate( Ir[ i ], la, ndims )
         skew_recon[ ..., i ] = skew( Ir[ i ], var_recon, ndims = ndims )
         kurt_recon[ ..., i ] = kurt( Ir[ i ], var_recon, ndims = ndims )
@@ -568,7 +562,7 @@ def vectorize( stats_all, min_level = None, weights = None ) :
                        t.flatten( mag_std[ ..., min_level :, : ], start_dim = -2, end_dim = -1 ), \
                        t.flatten( xcorr_lmag[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
                        t.flatten( xcorr_lreim[ ..., :, :, min_level : ], start_dim = -3, end_dim = -1 ), \
-                        10 * acorr_HP, var_HP[ ..., None ] ], dim = -1 )
+                        acorr_HP, var_HP[ ..., None ] ], dim = -1 )
     if got_weights :
         return vstats, weights
     else :
@@ -589,14 +583,14 @@ if __name__ == "__main__" :
     nauto = 3  # span of the auto-correlation in each dimension
 
     # read 3D image
-    sample = 'ref_textures/sawtooth3D_img.nii.gz'
+    sample = 'sawtooth3D_img.nii.gz'
     I = t.tensor( nib.load( sample ).get_fdata() )
 
     # # uncomment to test 2D image expansion
     # I = I[ :, :, 64 ].clone()  # make 2D to test 2D expansion
 
-    # uncomment to test 1D signal expansion
-    I = I[ :, 64, 64 ].clone()  # make 1D to test 1D expansion
+    # # uncomment to test 1D signal expansion
+    # I = I[ :, 64, 64 ].clone()  # make 1D to test 1D expansion
 
     # I = t.tensor( plt.imread( 'ref_textures/straw.tiff' ) / 255., dtype = t.float )
 
