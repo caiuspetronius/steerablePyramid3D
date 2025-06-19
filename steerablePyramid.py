@@ -314,10 +314,6 @@ def autocorrelate( I, la, ndims = None ) :
         ndims = I.ndim
     sdims = list( range( -ndims, 0 ) )  # spatial dims in an image
     A = t.fft.fftshift( t.real( t.fft.ifftn( t.abs( t.fft.fftn( I, dim = sdims, norm = "ortho" ) )**2, dim = sdims ) ), dim = sdims )
-    # A = t.fft.rfftn( I, dim = sdims )
-    # A = A.real.pow( 2 ) + A.imag.pow( 2 )
-    # A = t.fft.irfftn( A, dim = sdims )
-    # A = t.fft.fftshift( A, dim = sdims ) / numel
     if ndims > 2 :
         ci = t.tensor( A.shape[ -3 ] // 2, dtype = t.int )
         lai = min( ci - 1, la )
